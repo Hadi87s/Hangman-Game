@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Hangman Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hangman-display {
+            font-size: 3rem;
+            margin: 2rem 0;
+            color: #4a5568;
+        }
+
+        .word-display {
+            font-size: 2.5rem;
+            letter-spacing: 15px;
+            margin: 2rem 0;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+            gap: 10px;
+            margin: 2rem 0;
+        }
+
+        .key-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: #edf2f7;
+            color: #4a5568;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .key-btn:hover:not(:disabled) {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+        }
+
+        .key-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            color: #4a5568;
+        }
+
+        .reset-btn {
+            margin-top: 2rem;
+            padding: 12px 30px;
+            background: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .hangman-figure {
+            stroke: #2d3748;
+            stroke-width: 4;
+            stroke-linecap: round;
+            fill: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .win {
+            background: #48bb78;
+        }
+
+        .lose {
+            background: #f56565;
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 1.5rem;
+            }
+            
+            .word-display {
+                font-size: 1.8rem;
+                letter-spacing: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Modern Hangman</h1>
+        <svg width="250" height="200" id="hangman-svg">
+            <!-- Gallows -->
+            <path class="hangman-figure" d="M20 180 H180 M40 180 V20 H120 V40" />
+            <!-- Body parts (hidden by default) -->
+            <path class="hangman-figure" d="M120 60 L120 90" style="display: none"/> <!-- Head -->
+            <circle class="hangman-figure" cx="120" cy="100" r="10" style="display: none"/> <!-- Head -->
+            <path class="hangman-figure" d="M120 110 L120 150" style="display: none"/> <!-- Body -->
+            <path class="hangman-figure" d="M120 120 L100 140" style="display: none"/> <!-- Left arm -->
+            <path class="hangman-figure" d="M120 120 L140 140" style="display: none"/> <!-- Right arm -->
+            <path class="hangman-figure" d="M120 150 L100 180" style="display: none"/> <!-- Left leg -->
+            <path class="hangman-figure" d="M120 150 L140 180" style="display: none"/> <!-- Right leg -->
+        </svg>
+        <div class="word-display" id="word-display"></div>
+        <div class="keyboard" id="keyboard"></div>
+        <div class="status" id="status"></div>
+        <button class="reset-btn" onclick="initGame()">New Game</button>
+    </div>
+    <div class="notification" id="notification"></div>
+
+    <script>
+        const words = ['REACT', 'JAVASCRIPT', 'DEVELOPER', 'PROGRAMMING', 'FRAMEWORK', 
+                      'COMPONENT', 'INTERFACE', 'RESPONSIVE', 'APPLICATION', 'FUNCTION'];
+        
+        let selectedWord = '';
+        let correctLetters = new Set();
+        let wrongLetters = new Set();
+        let gameActive = true;
+        const maxWrongAttempts = 6;
+        const hangmanParts = document.querySelectorAll('#hangman-svg .hangman-figure');
+
+        function initGame() {
+            gameActive = true;
+            correctLetters.clear();
+            wrongLetters.clear();
+            selectedWord = words[Math.floor(Math.random() * words.length)];
+            document.getElementById('status').textContent = '';
+            document.getElementById('notification').style.opacity = '0';
+            
+            // Reset hangman drawing
+            hangmanParts.forEach((part, index) => {
+                part.style.display = index === 0 ? 'block' : 'none';
+            });
+
+            // Generate keyboard
+            const keyboard = document.getElementById('keyboard');
+            keyboard.innerHTML = '';
+            for (let i = 65; i <= 90; i++) {
+                const letter = String.fromCharCode(i);
+                const button = document.createElement('button');
+                button.className = 'key-btn';
+                button.textContent = letter;
+                button.addEventListener('click', () => handleGuess(letter));
+                keyboard.appendChild(button);
+            }
+
+            updateDisplay();
+        }
+
+        function handleGuess(letter) {
+            if (!gameActive || correctLetters.has(letter) || wrongLetters.has(letter)) return;
+
+            if (selectedWord.includes(letter)) {
+                correctLetters.add(letter);
+                showNotification(`Good guess! ${letter} is correct!`, 'win');
+            } else {
+                wrongLetters.add(letter);
+                showNotification(`Oops! ${letter} is not in the word`, 'lose');
+                updateHangman();
+            }
+
+            updateDisplay();
+            checkGameStatus();
+        }
+
+        function updateDisplay() {
+            const wordDisplay = selectedWord
+                .split('')
+                .map(letter => correctLetters.has(letter) ? letter : '_')
+                .join(' ');
+            
+            document.getElementById('word-display').textContent = wordDisplay;
+            
+            // Update keyboard buttons
+            document.querySelectorAll('.key-btn').forEach(button => {
+                const letter = button.textContent;
+                button.disabled = correctLetters.has(letter) || wrongLetters.has(letter);
+            });
+        }
+
+        function updateHangman() {
+            const errors = wrongLetters.size;
+            if (errors <= maxWrongAttempts) {
+                hangmanParts[errors].style.display = 'block';
+            }
+        }
+
+        function checkGameStatus() {
+            if (wrongLetters.size >= maxWrongAttempts) {
+                gameActive = false;
+                document.getElementById('status').innerHTML = 
+                    `Game Over! The word was: <strong>${selectedWord}</strong>`;
+                showNotification('Game Over! Try again!', 'lose');
+            } else if ([...selectedWord].every(letter => correctLetters.has(letter))) {
+                gameActive = false;
+                document.getElementById('status').innerHTML = 'Congratulations! You won! 🎉';
+                showNotification('You Won! 🎉', 'win');
+                document.body.classList.add('confetti');
+                setTimeout(() => document.body.classList.remove('confetti'), 2000);
+            }
+        }
+
+        function showNotification(text, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = text;
+            notification.className = `notification ${type}`;
+            notification.style.opacity = '1';
+            setTimeout(() => notification.style.opacity = '0', 2000);
+        }
+
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
