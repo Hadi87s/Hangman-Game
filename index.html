@@ -147,7 +147,7 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Modern Hangman</h1>
+        <h1>Hangman</h1>
         <svg width="250" height="200" id="hangman-svg">
             <!-- Gallows -->
             <path class="hangman-figure" d="M20 180 H180 M40 180 V20 H120 V40" />
@@ -169,7 +169,10 @@
 
     <script>
         const words = ['REACT', 'JAVASCRIPT', 'DEVELOPER', 'PROGRAMMING', 'FRAMEWORK', 
-                      'COMPONENT', 'INTERFACE', 'RESPONSIVE', 'APPLICATION', 'FUNCTION'];
+                      'COMPONENT', 'INTERFACE', 'RESPONSIVE', 'APPLICATION', 'FUNCTION',
+                       'TOMATO','INCEPTION','CRIMINAL','INVESTIGATION','APPLE','DEATH',
+                       'BLOOD','PLANE','COUNTRY','CAR','MOUSE','MONITOR','DEEPSEEK',
+                       'COMPUTER','LAPTOP','KEYBOARD','PERFUME','KNIGHT','QUEEN','KING'];
         
         let selectedWord = '';
         let correctLetters = new Set();
